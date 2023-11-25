@@ -1,9 +1,10 @@
-from typing import List, Tuple, Union
-from math import log10, floor 
+from typing import Tuple
+from custom_types import ListImage, FloatOrNone, FilterKernel, ImageFunction
+from math import log10
 from constants import MAX_NUMBER_OF_INTENSITY_LEVELS
 from utils import generateGaussianNoise, convertToProperImage
 
-def getMean(image: List[List[int]]) -> float:
+def getMean(image: ListImage) -> float:
     N = len(image)
     M = len(image[0])
 
@@ -11,7 +12,7 @@ def getMean(image: List[List[int]]) -> float:
 
     return mean
 
-def getVariance(image: List[List[int]], mean: Union[float, None]=None) -> float:
+def getVariance(image: ListImage, mean: FloatOrNone=None) -> float:
     N = len(image)
     M = len(image[0])
 
@@ -21,14 +22,14 @@ def getVariance(image: List[List[int]], mean: Union[float, None]=None) -> float:
 
     return variance
 
-def getStandardDeviation(image: List[List[int]], mean: Union[float, None]=None, variance: Union[float, None]=None) -> float:
+def getStandardDeviation(image: ListImage, mean: FloatOrNone=None, variance: FloatOrNone=None) -> float:
     variance = variance if variance is not None else getVariance(image, mean)
 
     standard_deviation = variance ** 0.5
 
     return standard_deviation
 
-def getMSE(image1: List[List[int]], image2: List[List[int]]) -> float:
+def getMSE(image1: ListImage, image2: ListImage) -> float:
     N = len(image1)
     M = len(image1[0])
 
@@ -36,14 +37,14 @@ def getMSE(image1: List[List[int]], image2: List[List[int]]) -> float:
 
     return MSE
 
-def getRMSE(image1: List[List[int]], image2: List[List[int]], MSE: Union[float, None]=None) -> float:
+def getRMSE(image1: ListImage, image2: ListImage, MSE: FloatOrNone=None) -> float:
     MSE = MSE if MSE is not None else getMSE(image1, image2)
         
     RMSE = MSE ** 0.5
 
     return RMSE
 
-def getPSNR(image1: List[List[int]], image2: List[List[int]], MSE: Union[float, None]=None, RMSE: Union[float, None]=None) -> float:
+def getPSNR(image1: ListImage, image2: ListImage, MSE: FloatOrNone=None, RMSE: FloatOrNone=None) -> float:
     L = MAX_NUMBER_OF_INTENSITY_LEVELS
 
     RMSE = RMSE if RMSE is not None else getRMSE(image1, image2, MSE)
@@ -52,7 +53,7 @@ def getPSNR(image1: List[List[int]], image2: List[List[int]], MSE: Union[float, 
 
     return PSNR
 
-def addGaussianAdditiveNoise(image: List[List[int]], std_dev_coef: float) -> List[List[int]]:
+def addGaussianAdditiveNoise(image: ListImage, std_dev_coef: float) -> ListImage:
     N = len(image)
     M = len(image[0])
 
@@ -66,32 +67,64 @@ def addGaussianAdditiveNoise(image: List[List[int]], std_dev_coef: float) -> Lis
 
     return convertToProperImage(noisy_image)
 
-def mirrorImage(image: List[List[int]], filterKernelSizes: Tuple[int, int]) -> List[List[int]]:
+def getMirroredImageFunction(image: ListImage, filterKernelSizes: Tuple[int, int]) -> ImageFunction:
     N = len(image)
     M = len(image[0])
     
-    extensionSizes = tuple(floor(size / 2) for size in filterKernelSizes)
+    extensionSizes = tuple(size // 2 for size in filterKernelSizes)
 
-    mirroredImage = []
-
-    for i in range(-extensionSizes[0], N + extensionSizes[0]):
-        mirroredImage.append([])
-
-        if i < 0:
+    def mirroredImageFunction(i: int, j: int) -> int:
+        if i >= N + extensionSizes[0]:
+            raise KeyError
+        elif i < 0:
             ii = -i
         elif i >= N:
             ii = N - 1 - (i - N + 1)
         else:
             ii = i
 
-        for j in range(-extensionSizes[1], M + extensionSizes[1]):
-            if j < 0:
-                jj = -j
-            elif j >= M:
-                jj = M - 1 - (j - M + 1)
-            else:
-                jj = j
+        if j >= M + extensionSizes[1]:
+            raise KeyError
+        elif j < 0:
+            jj = -j
+        elif j >= M:
+            jj = M - 1 - (j - M + 1)
+        else:
+            jj = j
 
-            mirroredImage[-1].append(image[ii][jj])
+        return image[ii][jj]
+
+    return mirroredImageFunction
+
+def getMirroredImage(image: ListImage, filterKernelSizes: Tuple[int, int]) -> ListImage:
+    N = len(image)
+    M = len(image[0])
+    
+    extensionSizes = tuple(size // 2 for size in filterKernelSizes)
+
+    mirroredImage = []
+
+    mirroredImageFunction = getMirroredImageFunction(image, filterKernelSizes)
+
+    for i in range(-extensionSizes[0], N + extensionSizes[0]):
+        mirroredImage.append([])
+
+        for j in range(-extensionSizes[1], M + extensionSizes[1]):
+            mirroredImage[-1].append(mirroredImageFunction(i, j))
 
     return mirroredImage
+
+def linearSpatialFiltering(image: ListImage, filterKernel: FilterKernel) -> ListImage:
+    N = len(image)
+    M = len(image[0])
+
+    filterKernelSizes = (len(filterKernel), len(filterKernel[0]))
+
+    extendedImageFunction = getMirroredImageFunction(image, filterKernelSizes)
+
+    a = filterKernelSizes[0] // 2 # equal to (filterKernelSizes[0] - 1) / 2 in formula
+    b = filterKernelSizes[1] // 2
+
+    filteredImage = [[sum([sum([filterKernel[a + s][b + t] * extendedImageFunction(i + s, j + t) for t in range(-b, b + 1)]) for s in range(-a, a + 1)]) for j in range(M)] for i in range(N)]
+
+    return convertToProperImage(filteredImage)

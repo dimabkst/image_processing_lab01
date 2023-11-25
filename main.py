@@ -1,12 +1,14 @@
 from traceback import print_exc
 from PIL import Image
-from utils import convertToListImage, convertToPillowImage, saveImage
-from services import getMean, getVariance, getStandardDeviation, getMSE, getRMSE, getPSNR, addGaussianAdditiveNoise, mirrorImage
+from utils import validateImageSize, validateFilterKernel, convertToListImage, convertToPillowImage, saveImage
+from services import getMean, getVariance, getStandardDeviation, getMSE, getRMSE, getPSNR, addGaussianAdditiveNoise, getMirroredImage, linearSpatialFiltering
 
 if __name__ == "__main__":
     try:
         with Image.open('./assets/cameraman.tif') as im:
             image = convertToListImage(im)
+
+            validateImageSize(image)
 
             mean = getMean(image)
 
@@ -24,9 +26,21 @@ if __name__ == "__main__":
 
             filter_kernel_size = 250
 
-            mirroredImage = mirrorImage(image, (filter_kernel_size, filter_kernel_size))
+            mirroredImage = getMirroredImage(image, (filter_kernel_size, filter_kernel_size))
 
             saveImage(convertToPillowImage(mirroredImage), f'./assets/cameraman_mirrored_size={filter_kernel_size}.tif')
+
+            filterKernel = [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
+
+            filterKernelSum = sum([sum(filterKernel[row]) for row in range(len(filterKernel))])
+
+            filterKernel = [[el / filterKernelSum for el in row] for row in filterKernel]
+
+            validateFilterKernel(filterKernel)
+
+            filteredImage = linearSpatialFiltering(noisy_image1, filterKernel)
+
+            saveImage(convertToPillowImage(filteredImage), f'./assets/cameraman_filtered.tif')            
     except Exception as e:
         print('Error occured:')
         print_exc()
