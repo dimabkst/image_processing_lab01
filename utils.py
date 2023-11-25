@@ -1,6 +1,7 @@
 from typing import List, Tuple, Union
-from numpy import clip
+from numpy import array, clip, uint8
 from numpy.random import normal
+from PIL import Image
 from constants import MIN_INTENSITY, MAX_INTENSITY
 
 def validateImageSize(image: List[List[int]]):
@@ -23,4 +24,14 @@ def generateGaussianNoise(mean: float=0.0, std_dev: float=1.0, size:Union[Tuple[
 def convertToProperImage(image: List[List[float]]) -> List[List[int]]:
     # Convert values to int and limit them to min_intensity, max_intensity
 
-    return clip(image, MIN_INTENSITY, MAX_INTENSITY).astype(int).tolist()
+    return clip(image, MIN_INTENSITY, MAX_INTENSITY).astype(uint8).tolist()
+
+def convertToListImage(image: Image.Image) -> List[List[int]]:
+    # In getpixel((x, y)) x - column, y - row 
+    return [[image.getpixel((j, i)) for j in range(image.width)] for i in range(image.height)]
+
+def convertToPillowImage(image: List[List[int]]) -> Image.Image:
+    return Image.fromarray(array(image, dtype=uint8), mode='L')
+
+def saveImage(image: Image.Image, path: str) -> None:
+    return image.save(path, mode='L')
