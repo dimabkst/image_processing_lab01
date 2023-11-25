@@ -92,21 +92,6 @@ def mirrorImage(image: List[List[int]], filterKernelSizes: Tuple[int, int]) -> L
             else:
                 jj = j
 
-            # if i < 0 and j < 0:
-            #     pixel = image[-i][-j]
-            # elif i < 0:
-            #     pixel = image[-i][-j]
-            # elif j < 0:
-            #     pixel = image[i][-j]
-            # elif i >= N and j >= M:
-            #     pixel = image[N - 1 - (i - N + 1)][M - 1 - (j - M + 1)]
-            # elif i >= N:
-            #     pixel = image[N - 1 - (i - N + 1)][j]
-            # elif i >= M:
-            #     pixel = image[i][M - 1 - (j - M + 1)]
-            # else:
-            #     pixel = image[i][j]
-
             mirroredImage[-1].append(image[ii][jj])
 
     return mirroredImage
