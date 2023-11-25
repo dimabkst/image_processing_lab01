@@ -67,6 +67,16 @@ def addGaussianAdditiveNoise(image: ListImage, std_dev_coef: float) -> ListImage
 
     return convertToProperImage(noisy_image)
 
+def createFilterKernel(weights: FilterKernel) -> FilterKernel:
+    filterKernel = weights
+
+    filterKernelSum = sum([sum(filterKernel[row]) for row in range(len(filterKernel))])
+
+    if filterKernelSum != 1:
+        filterKernel = [[el / filterKernelSum for el in row] for row in filterKernel]
+
+    return filterKernel
+
 def getMirroredImageFunction(image: ListImage, filterKernelSizes: Tuple[int, int]) -> ImageFunction:
     N = len(image)
     M = len(image[0])
