@@ -1,15 +1,19 @@
-from os.path import splitext
+from os.path import basename, splitext
 from traceback import print_exc
 from PIL import Image
 from typing import List
 from custom_types import FilterKernel
+from constants import COMPUTED_DIRECTORY_NAME
 from utils import validateImageSize, validateFilterKernel, convertToListImage, convertToPillowImage, saveImage
 from services import getMean, getVariance, getStandardDeviation, getRMSE, getPSNR, addGaussianAdditiveNoise, createFilterKernel, linearSpatialFiltering
 
-def labTask(imagePath: str) -> None:
-    path_without_extension, path_extension = splitext(imagePath)
+def labTask(image_path: str) -> None:
+    computed_directory = f'./{COMPUTED_DIRECTORY_NAME}/'
 
-    with Image.open(imagePath) as im:
+    file_name_with_extension = basename(image_path)
+    file_name, file_extension = splitext(file_name_with_extension)
+
+    with Image.open(image_path) as im:
             image = convertToListImage(im)
 
             validateImageSize(image)
@@ -18,7 +22,7 @@ def labTask(imagePath: str) -> None:
             variance = getVariance(image, mean)
             standard_deviation = getStandardDeviation(image, mean, variance)
 
-            print(f'Image = {imagePath}, mean = {mean}, variance = {variance}, standard deviation = {standard_deviation}.')
+            print(f'Image = {image_path}, mean = {mean}, variance = {variance}, standard deviation = {standard_deviation}.')
 
             std_dev_coefs = [0.2, 0.3]
 
@@ -36,11 +40,11 @@ def labTask(imagePath: str) -> None:
             PSNRs = [[getPSNR(image, filtered_images[i][j], RMSEs[i][j]) for j in range(len(filtered_images[i]))] for i in range(len(filtered_images))]
 
             for i in range(len(noisy_images)):
-                saveImage(convertToPillowImage(noisy_images[i]), f'{path_without_extension}_noisy_{i + 1}{path_extension}')
+                saveImage(convertToPillowImage(noisy_images[i]), f'{computed_directory}{file_name}_noisy_{i + 1}{file_extension}')
 
             for i in range(len(filtered_images)):
                  for j in range(len(filtered_images[i])):
-                    saveImage(convertToPillowImage(filtered_images[i][j]), f'{path_without_extension}_filtered_{i + 1}_{j + 1}{path_extension}')
+                    saveImage(convertToPillowImage(filtered_images[i][j]), f'{computed_directory}{file_name}_filtered_{i + 1}_{j + 1}{file_extension}')
             
             for i in range(len(RMSEs)):
                 print_str = f'Kernel{i + 1}.'
@@ -54,7 +58,9 @@ def labTask(imagePath: str) -> None:
 
 if __name__ == "__main__":
     try:
-         labTask('./assets/cameraman.tif')          
+         labTask('./assets/cameraman.tif') 
+
+         labTask('./assets/lena_gray_256.tif')         
     except Exception as e:
         print('Error occured:')
         print_exc()
