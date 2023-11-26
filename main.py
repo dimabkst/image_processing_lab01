@@ -1,6 +1,8 @@
 from os.path import splitext
 from traceback import print_exc
 from PIL import Image
+from typing import List
+from custom_types import FilterKernel
 from utils import validateImageSize, validateFilterKernel, convertToListImage, convertToPillowImage, saveImage
 from services import getMean, getVariance, getStandardDeviation, getRMSE, getPSNR, addGaussianAdditiveNoise, createFilterKernel, linearSpatialFiltering
 
@@ -18,45 +20,37 @@ def labTask(imagePath: str) -> None:
 
             print(f'Image = {imagePath}, mean = {mean}, variance = {variance}, standard deviation = {standard_deviation}.')
 
-            # TODO: create lists and not variables
-            std_dev_coef1 = 0.2
-            std_dev_coef2 = 0.3
+            std_dev_coefs = [0.2, 0.3]
 
-            noisy_image1 = addGaussianAdditiveNoise(image, std_dev_coef1)
-            noisy_image2 = addGaussianAdditiveNoise(image, std_dev_coef2)
+            noisy_images = [addGaussianAdditiveNoise(image, std_dev_coef) for std_dev_coef in std_dev_coefs]
 
-            filterKernel1 = createFilterKernel([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
-            filterKernel2 = createFilterKernel([[1, 15, 1], [15, 30, 15], [1, 15, 1]])            
+            filter_kernels:List[FilterKernel] = [[[1, 2, 1], [2, 4, 2], [1, 2, 1]], [[1, 15, 1], [15, 30, 15], [1, 15, 1]]]
+            filter_kernels = [createFilterKernel(filter_kernel) for filter_kernel in filter_kernels]
+            
+            for filter_kernel in filter_kernels:
+                validateFilterKernel(filter_kernel)
 
-            validateFilterKernel(filterKernel1)
-            validateFilterKernel(filterKernel2)
+            filtered_images = [[linearSpatialFiltering(noisy_image, filter_kernel) for noisy_image in noisy_images] for filter_kernel in filter_kernels]
 
-            filteredImage1_1 = linearSpatialFiltering(noisy_image1, filterKernel1)
-            filteredImage2_1 = linearSpatialFiltering(noisy_image2, filterKernel1)
+            RMSEs = [[getRMSE(image, filtered_image) for filtered_image in _] for _ in filtered_images]
+            PSNRs = [[getPSNR(image, filtered_images[i][j], RMSEs[i][j]) for j in range(len(filtered_images[i]))] for i in range(len(filtered_images))]
 
-            filteredImage1_2 = linearSpatialFiltering(noisy_image1, filterKernel2)
-            filteredImage2_2 = linearSpatialFiltering(noisy_image2, filterKernel2)
+            for i in range(len(noisy_images)):
+                saveImage(convertToPillowImage(noisy_images[i]), f'{path_without_extension}_noisy_{i + 1}{path_extension}')
 
-            RMSE1_1 = getRMSE(image, filteredImage1_1)
-            PSNR1_1 = getPSNR(image, filteredImage1_1, RMSE=RMSE1_1)
-            RMSE2_1 = getRMSE(image, filteredImage2_1)
-            PSNR2_1 = getPSNR(image, filteredImage2_1, RMSE=RMSE2_1)
+            for i in range(len(filtered_images)):
+                 for j in range(len(filtered_images[i])):
+                    saveImage(convertToPillowImage(filtered_images[i][j]), f'{path_without_extension}_filtered_{i + 1}_{j + 1}{path_extension}')
+            
+            for i in range(len(RMSEs)):
+                print_str = f'Kernel{i + 1}.'
 
-            RMSE1_2 = getRMSE(image, filteredImage1_2)
-            PSNR1_2 = getPSNR(image, filteredImage1_2, RMSE=RMSE1_2)
-            RMSE2_2 = getRMSE(image, filteredImage2_2)
-            PSNR2_2 = getPSNR(image, filteredImage2_2, RMSE=RMSE2_2)
+                for j in range((len(RMSEs[i]))):
+                    print_str += f' RMSE_{i + 1}_{j + 1} = {RMSEs[i][j]}. PSNR_{i + 1}_{j + 1} = {PSNRs[i][j]}.'
 
-            saveImage(convertToPillowImage(noisy_image1), f'{path_without_extension}_noisy_1{path_extension}')
-            saveImage(convertToPillowImage(noisy_image2), f'{path_without_extension}_noisy_2{path_extension}')
-            saveImage(convertToPillowImage(filteredImage1_1), f'{path_without_extension}_filtered_1_1{path_extension}')
-            saveImage(convertToPillowImage(filteredImage2_1), f'{path_without_extension}_filtered_2_1{path_extension}')
-            saveImage(convertToPillowImage(filteredImage1_2), f'{path_without_extension}_filtered_1_2{path_extension}')
-            saveImage(convertToPillowImage(filteredImage2_2), f'{path_without_extension}_filtered_2_2{path_extension}')
+                print(print_str)
 
-            print(f'Kernel1. RMSE1_1: {RMSE1_1}. PSNR1_1: {PSNR1_1}. RMSE2_1: {RMSE2_1}. PSNR2_1: {PSNR2_1}')
-            print(f'Kernel2. RMSE1_2: {RMSE1_2}. PSNR1_2: {PSNR1_2}. RMSE2_2: {RMSE2_2}. PSNR2_2: {PSNR2_2}')
-
+            print('\n')
 
 if __name__ == "__main__":
     try:

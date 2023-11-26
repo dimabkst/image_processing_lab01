@@ -6,10 +6,10 @@ from PIL import Image
 from constants import MIN_INTENSITY, MAX_INTENSITY
 
 def validateImageSize(image: ListImage):
-    colsCount = len(image[0])
+    cols_count = len(image[0])
 
     for row in image:
-        if (len(row) != colsCount):
+        if (len(row) != cols_count):
             raise Exception('Image has inappropriate size')
         
 def validateImagesSizeMatch(image1: ListImage, image2: ListImage):
@@ -19,27 +19,27 @@ def validateImagesSizeMatch(image1: ListImage, image2: ListImage):
     if (len(image1[0]) != len(image2[0])):
         raise Exception('Images have different cols count')
     
-def validateFilterKernelSize(filterKernel: FilterKernel):
-    rowsCount = len(filterKernel)
+def validateFilterKernelSize(filter_kernel: FilterKernel):
+    rows_count = len(filter_kernel)
 
-    if (rowsCount % 2 == 0):
+    if (rows_count % 2 == 0):
         raise Exception('Filter kernel has inappropriate size')
     
-    colsCount = len(filterKernel[0])
+    cols_count = len(filter_kernel[0])
 
-    for row in filterKernel:
-        if (len(row) != colsCount):
+    for row in filter_kernel:
+        if (len(row) != cols_count):
             raise Exception('Filter kernel has inappropriate size')
         
         if (len(row) % 2 == 0):
             raise Exception('Filter kernel has inappropriate size')
         
-def validateFilterKernel(filterKernel: FilterKernel):
-    validateFilterKernelSize(filterKernel)
+def validateFilterKernel(filter_kernel: FilterKernel):
+    validateFilterKernelSize(filter_kernel)
 
-    kernelSum = sum([sum(filterKernel[row]) for row in range(len(filterKernel))])
+    kernel_sum = sum([sum(filter_kernel[row]) for row in range(len(filter_kernel))])
 
-    if kernelSum != 1:
+    if kernel_sum != 1:
         raise Exception('Filter kernel has inappropriate elements')
 
 def generateGaussianNoise(mean: float=0.0, std_dev: float=1.0, size:Union[Tuple[int, int], None]=None) -> List:

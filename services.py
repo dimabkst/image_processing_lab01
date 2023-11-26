@@ -68,23 +68,23 @@ def addGaussianAdditiveNoise(image: ListImage, std_dev_coef: float) -> ListImage
     return convertToProperImage(noisy_image)
 
 def createFilterKernel(weights: FilterKernel) -> FilterKernel:
-    filterKernel = weights
+    filter_kernel = weights
 
-    filterKernelSum = sum([sum(filterKernel[row]) for row in range(len(filterKernel))])
+    filter_kernel_sum = sum([sum(filter_kernel[row]) for row in range(len(filter_kernel))])
 
-    if filterKernelSum != 1:
-        filterKernel = [[el / filterKernelSum for el in row] for row in filterKernel]
+    if filter_kernel_sum != 1:
+        filter_kernel = [[el / filter_kernel_sum for el in row] for row in filter_kernel]
 
-    return filterKernel
+    return filter_kernel
 
-def getMirroredImageFunction(image: ListImage, filterKernelSizes: Tuple[int, int]) -> ImageFunction:
+def getMirroredImageFunction(image: ListImage, filter_kernel_sizes: Tuple[int, int]) -> ImageFunction:
     N = len(image)
     M = len(image[0])
     
-    extensionSizes = tuple(size // 2 for size in filterKernelSizes)
+    extension_sizes = tuple(size // 2 for size in filter_kernel_sizes)
 
     def mirroredImageFunction(i: int, j: int) -> int:
-        if i >= N + extensionSizes[0]:
+        if i >= N + extension_sizes[0]:
             raise KeyError
         elif i < 0:
             ii = -i
@@ -93,7 +93,7 @@ def getMirroredImageFunction(image: ListImage, filterKernelSizes: Tuple[int, int
         else:
             ii = i
 
-        if j >= M + extensionSizes[1]:
+        if j >= M + extension_sizes[1]:
             raise KeyError
         elif j < 0:
             jj = -j
@@ -106,35 +106,35 @@ def getMirroredImageFunction(image: ListImage, filterKernelSizes: Tuple[int, int
 
     return mirroredImageFunction
 
-def getMirroredImage(image: ListImage, filterKernelSizes: Tuple[int, int]) -> ListImage:
+def getMirroredImage(image: ListImage, filter_kernel_sizes: Tuple[int, int]) -> ListImage:
     N = len(image)
     M = len(image[0])
     
-    extensionSizes = tuple(size // 2 for size in filterKernelSizes)
+    extension_sizes = tuple(size // 2 for size in filter_kernel_sizes)
 
-    mirroredImage = []
+    mirrored_image = []
 
-    mirroredImageFunction = getMirroredImageFunction(image, filterKernelSizes)
+    mirroredImageFunction = getMirroredImageFunction(image, filter_kernel_sizes)
 
-    for i in range(-extensionSizes[0], N + extensionSizes[0]):
-        mirroredImage.append([])
+    for i in range(-extension_sizes[0], N + extension_sizes[0]):
+        mirrored_image.append([])
 
-        for j in range(-extensionSizes[1], M + extensionSizes[1]):
-            mirroredImage[-1].append(mirroredImageFunction(i, j))
+        for j in range(-extension_sizes[1], M + extension_sizes[1]):
+            mirrored_image[-1].append(mirroredImageFunction(i, j))
 
-    return mirroredImage
+    return mirrored_image
 
-def linearSpatialFiltering(image: ListImage, filterKernel: FilterKernel) -> ListImage:
+def linearSpatialFiltering(image: ListImage, filter_kernel: FilterKernel) -> ListImage:
     N = len(image)
     M = len(image[0])
 
-    filterKernelSizes = (len(filterKernel), len(filterKernel[0]))
+    filter_kernel_sizes = (len(filter_kernel), len(filter_kernel[0]))
 
-    extendedImageFunction = getMirroredImageFunction(image, filterKernelSizes)
+    extended_image_function = getMirroredImageFunction(image, filter_kernel_sizes)
 
-    a = filterKernelSizes[0] // 2 # equal to (filterKernelSizes[0] - 1) / 2 in formula
-    b = filterKernelSizes[1] // 2
+    a = filter_kernel_sizes[0] // 2 # equal to (filterKernelSizes[0] - 1) / 2 in formula
+    b = filter_kernel_sizes[1] // 2
 
-    filteredImage = [[sum([sum([filterKernel[a + s][b + t] * extendedImageFunction(i + s, j + t) for t in range(-b, b + 1)]) for s in range(-a, a + 1)]) for j in range(M)] for i in range(N)]
+    filtered_image = [[sum([sum([filter_kernel[a + s][b + t] * extended_image_function(i + s, j + t) for t in range(-b, b + 1)]) for s in range(-a, a + 1)]) for j in range(M)] for i in range(N)]
 
-    return convertToProperImage(filteredImage)
+    return convertToProperImage(filtered_image)
