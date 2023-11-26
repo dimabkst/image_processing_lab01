@@ -5,6 +5,7 @@ Images in code are represented by 2D Python lists where first index represents r
 The (0, 0) coordinates for an image are at the top-left corner:
 
 (0,0)---------> y (horizontal)
+  
   |
   |
   v
