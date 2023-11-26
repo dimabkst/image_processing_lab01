@@ -7,6 +7,9 @@ The (0, 0) coordinates for an image are at the top-left corner:
 (0,0)---------> y (horizontal)
   
   |
+
   |
+
   v
+  
   x (vertical)
