@@ -28,6 +28,9 @@ def labTask(image_path: str) -> None:
 
             noisy_images = [addGaussianAdditiveNoise(image, std_dev_coef) for std_dev_coef in std_dev_coefs]
 
+            noisy_RMSEs = [getRMSE(image, noisy_image) for noisy_image in noisy_images]
+            noisy_PSNRs = [getPSNR(image, noisy_images[i], noisy_RMSEs[i]) for i in range(len(noisy_images))]
+
             filter_kernels:List[FilterKernel] = [[[1, 2, 1], [2, 4, 2], [1, 2, 1]], [[1, 15, 1], [15, 30, 15], [1, 15, 1]]]
             filter_kernels = [createFilterKernel(filter_kernel) for filter_kernel in filter_kernels]
             
@@ -36,8 +39,8 @@ def labTask(image_path: str) -> None:
 
             filtered_images = [[linearSpatialFiltering(noisy_image, filter_kernel) for noisy_image in noisy_images] for filter_kernel in filter_kernels]
 
-            RMSEs = [[getRMSE(image, filtered_image) for filtered_image in _] for _ in filtered_images]
-            PSNRs = [[getPSNR(image, filtered_images[i][j], RMSEs[i][j]) for j in range(len(filtered_images[i]))] for i in range(len(filtered_images))]
+            filtered_RMSEs = [[getRMSE(image, filtered_image) for filtered_image in _] for _ in filtered_images]
+            filtered_PSNRs = [[getPSNR(image, filtered_images[i][j], filtered_RMSEs[i][j]) for j in range(len(filtered_images[i]))] for i in range(len(filtered_images))]
 
             for i in range(len(noisy_images)):
                 saveImage(convertToPillowImage(noisy_images[i]), f'{computed_directory}{file_name}_noisy_{i + 1}{file_extension}')
@@ -45,12 +48,17 @@ def labTask(image_path: str) -> None:
             for i in range(len(filtered_images)):
                  for j in range(len(filtered_images[i])):
                     saveImage(convertToPillowImage(filtered_images[i][j]), f'{computed_directory}{file_name}_filtered_{i + 1}_{j + 1}{file_extension}')
-            
-            for i in range(len(RMSEs)):
+
+            print('Noisy images data:')
+            for i in range(len(noisy_RMSEs)):
+                print(f' RMSE_{i + 1} = {noisy_RMSEs[i]}. PSNR_{i + 1} = {noisy_PSNRs[i]}.')
+
+            print('Filtered images data:')
+            for i in range(len(filtered_RMSEs)):
                 print_str = f'Kernel{i + 1}.'
 
-                for j in range((len(RMSEs[i]))):
-                    print_str += f' RMSE_{i + 1}_{j + 1} = {RMSEs[i][j]}. PSNR_{i + 1}_{j + 1} = {PSNRs[i][j]}.'
+                for j in range((len(filtered_RMSEs[i]))):
+                    print_str += f' RMSE_{i + 1}_{j + 1} = {filtered_RMSEs[i][j]}. PSNR_{i + 1}_{j + 1} = {filtered_PSNRs[i][j]}.'
 
                 print(print_str)
 
